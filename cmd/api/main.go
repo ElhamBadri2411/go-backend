@@ -5,11 +5,11 @@ import (
 )
 
 func main() {
-	var configSet = config{
+	var configSet config = config{
 		addr: ":8080",
 	}
 
-	var app *application = &application{
+	var app application = application{
 		config: configSet,
 	}
 
