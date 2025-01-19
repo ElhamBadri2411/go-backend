@@ -4,6 +4,9 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type application struct {
@@ -14,16 +17,24 @@ type config struct {
 	addr string
 }
 
-func (app *application) mount() *http.ServeMux {
-	mux := http.NewServeMux()
+func (app *application) mount() *chi.Mux {
+	r := chi.NewRouter()
 
-	mux.HandleFunc("GET /v1/health", app.healthCheckHandler)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
-	return mux
+	r.Use(middleware.Timeout(60 * time.Second))
+
+	r.Route("/v1", func(r chi.Router) {
+		r.Get("/health", app.healthCheckHandler)
+	})
+
+	return r
 }
 
-func (app *application) run(mux *http.ServeMux) error {
-
+func (app *application) run(mux *chi.Mux) error {
 	server := &http.Server{
 		Addr:         app.config.addr,
 		Handler:      mux,
@@ -32,6 +43,6 @@ func (app *application) run(mux *http.ServeMux) error {
 		IdleTimeout:  time.Minute,
 	}
 
-	log.Println("Server listening on port 8080")
+	log.Printf("Server listening on %s\n", app.config.addr)
 	return server.ListenAndServe()
 }
