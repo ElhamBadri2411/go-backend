@@ -7,8 +7,8 @@ import (
 )
 
 func GetString(key string, fallback string) string {
+
 	val, ok := os.LookupEnv(key)
-	log.Fatal(ok, val)
 
 	if !ok {
 		return fallback
