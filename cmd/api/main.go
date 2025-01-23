@@ -9,6 +9,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const version = "0.0.1"
+
 func main() {
 	// Loads env
 
@@ -19,6 +21,7 @@ func main() {
 
 	config := config{
 		addr: env.GetString("ADDR", ":8080"),
+		env:  env.GetString("ENV", "DEV"),
 		db: dbConfig{
 			url:          env.GetString("DB_URL", "postgres://user:password@localhost/social?sslmode=disable"),
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
