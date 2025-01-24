@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 	"database/sql"
+	"log"
+
 	"github.com/lib/pq"
 )
 
@@ -21,9 +23,8 @@ type PostsStore struct {
 }
 
 func (s *PostsStore) Create(ctx context.Context, post *Post) error {
-
 	query := `
-		INSERT INTO posts (context, title, user_id, tags)
+		INSERT INTO posts (content, title, user_id, tags)
 		VALUES ($1, $2, $3, $4) RETURNING id, created_at, updated_at
 	`
 
@@ -33,15 +34,14 @@ func (s *PostsStore) Create(ctx context.Context, post *Post) error {
 		post.Content,
 		post.Title,
 		post.UserId,
-		post.Tags,
 		pq.Array(post.Tags),
 	).Scan(
 		&post.ID,
 		&post.CreatedAt,
 		&post.UpdatedAt,
 	)
-
 	if err != nil {
+		log.Println(err.Error())
 		return err
 	}
 

@@ -31,6 +31,11 @@ func main() {
 	}
 
 	db, err := db.New(config.db.url, config.db.maxOpenConns, config.db.maxIdleConns, config.db.maxIdleTime)
+	if err != nil {
+		db.Close()
+	}
+	defer db.Close()
+
 	store := store.NewStorage(db)
 
 	var app application = application{
@@ -39,5 +44,5 @@ func main() {
 	}
 
 	mux := app.mount()
-	log.Fatal(app.run(mux))
+	log.Println(app.run(mux))
 }

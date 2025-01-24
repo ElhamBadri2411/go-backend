@@ -8,17 +8,13 @@ import (
 )
 
 func New(url string, maxOpenConns int, maxIdleConns int, maxIdleTime string) (*sql.DB, error) {
-
 	db, err := sql.Open("postgres", url)
-
 	if err != nil {
 		return nil, err
 	}
-	defer db.Close()
 	log.Println("Connected to db")
 
 	duration, err := time.ParseDuration(maxIdleTime)
-
 	if err != nil {
 		return nil, err
 	}
