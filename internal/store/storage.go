@@ -3,10 +3,14 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
 )
+
+var ErrNotFound = errors.New("resource not found")
 
 type PostsRepository interface {
 	Create(context.Context, *Post) error
+	GetById(context.Context, int64) (*Post, error)
 }
 
 type UsersRepository interface {
@@ -20,7 +24,7 @@ type Storage struct {
 
 func NewStorage(db *sql.DB) Storage {
 	return Storage{
-		PostsRepository: &PostsStore{db},
-		UsersRepository: &UsersStore{db},
+		PostsRepository: &PostsRepositoryPostgres{db},
+		UsersRepository: &UsersRepositoryPostgres{db},
 	}
 }
