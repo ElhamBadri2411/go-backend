@@ -20,22 +20,23 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 	postIdParam := chi.URLParam(r, "postId")
 	postId, err := strconv.ParseInt(postIdParam, 10, 64)
 	if err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
+		return
 	}
 
 	post, err := app.store.PostsRepository.GetById(ctx, postId)
 	if err != nil {
 		switch {
 		case errors.Is(err, store.ErrNotFound):
-			writeJSONError(w, http.StatusNotFound, err.Error())
+			app.notFoundResponse(w, r, err)
 		default:
-			writeJSONError(w, http.StatusInternalServerError, err.Error())
+			app.internalServerError(w, r, err)
 		}
 		return
 	}
 
 	if err := writeJSON(w, http.StatusOK, post); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 		return
 	}
 }
@@ -44,7 +45,7 @@ func (app *application) createPostsHandler(w http.ResponseWriter, r *http.Reques
 	var payload createPostPayload
 
 	if err := readJSON(w, r, &payload); err != nil {
-		writeJSONError(w, http.StatusBadRequest, err.Error())
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -58,12 +59,12 @@ func (app *application) createPostsHandler(w http.ResponseWriter, r *http.Reques
 
 	ctx := r.Context()
 	if err := app.store.PostsRepository.Create(ctx, post); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 		return
 	}
 
 	if err := writeJSON(w, http.StatusCreated, post); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 		return
 	}
 }
