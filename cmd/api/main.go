@@ -58,7 +58,7 @@ func main() {
 
 	// Create an `application` instance which encapsulates configuration settings
 	// and storage, making them accessible throughout the application.
-	var app application = application{
+	app := application{
 		config: config,
 		store:  store,
 	}
