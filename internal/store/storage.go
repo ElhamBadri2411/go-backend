@@ -25,6 +25,10 @@ type PostsRepository interface {
 	GetById(context.Context, int64) (*Post, error)
 }
 
+type CommentsRepository interface {
+	GetByPostId(context.Context, int64) ([]Comment, error)
+}
+
 // `UsersRepository` defines an interface for managing users in the database.
 type UsersRepository interface {
 	// `Create` inserts a new user into the database.
@@ -39,6 +43,7 @@ type UsersRepository interface {
 type Storage struct {
 	PostsRepository // Handles post-related database operations
 	UsersRepository // Handles user-related database operations
+	CommentsRepository
 }
 
 // `NewStorage` initializes and returns a new `Storage` instance.
@@ -51,7 +56,8 @@ type Storage struct {
 // These implementations interact with the database to perform CRUD operations.
 func NewStorage(db *sql.DB) Storage {
 	return Storage{
-		PostsRepository: &PostsRepositoryPostgres{db}, // Instantiate PostgreSQL-backed posts repository
-		UsersRepository: &UsersRepositoryPostgres{db}, // Instantiate PostgreSQL-backed users repository
+		PostsRepository:    &PostsRepositoryPostgres{db}, // Instantiate PostgreSQL-backed posts repository
+		UsersRepository:    &UsersRepositoryPostgres{db}, // Instantiate PostgreSQL-backed users repository
+		CommentsRepository: &CommentRepositoryPostgres{db},
 	}
 }
