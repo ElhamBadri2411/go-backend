@@ -23,6 +23,9 @@ type PostsRepository interface {
 	// - `int64`: The unique ID of the post.
 	// Returns a pointer to the `Post` struct if found, otherwise an error.
 	GetById(context.Context, int64) (*Post, error)
+
+	// `GetAll` retrieves posts from database (paginated) default offset 0, defulat limit 10
+	GetAll(context.Context, int64, int64) ([]*Post, error)
 }
 
 type CommentsRepository interface {

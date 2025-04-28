@@ -15,6 +15,42 @@ type createPostPayload struct {
 	Tags    []string `json:"tags"`
 }
 
+func (app *application) getPostsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	limitParam := chi.URLParam(r, "limit")
+	offsetParam := chi.URLParam(r, "offset")
+
+	if limitParam == "" {
+		limitParam = "10"
+	}
+	if offsetParam == "" {
+		offsetParam = "0"
+	}
+
+	limit, err := strconv.ParseInt(limitParam, 10, 64)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	offset, err := strconv.ParseInt(offsetParam, 10, 64)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	posts, err := app.store.PostsRepository.GetAll(ctx, limit, offset)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := writeJSON(w, http.StatusOK, posts); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
 func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	postIdParam := chi.URLParam(r, "postId")

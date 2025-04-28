@@ -119,3 +119,47 @@ func (s *PostsRepositoryPostgres) GetById(ctx context.Context, id int64) (*Post,
 
 	return &post, nil
 }
+
+// `GetAll` retrieves a post from the `posts` table by its unique ID.
+//
+// Parameters:
+// - `ctx` (context.Context): Provides timeout and cancellation handling for the query.
+// - `limit` (int64): for pagination
+// - `offset` (int64): for pagination
+//
+// Returns:
+// - A pointer to posts array
+// - `ErrNotFound` if no matching post is found.
+// - An error if the query execution fails.
+func (s *PostsRepositoryPostgres) GetAll(ctx context.Context, limit int64, offset int64) ([]*Post, error) {
+	var posts []*Post
+
+	query := `
+		SELECT id, user_id, title, content, created_at, updated_at, tags FROM posts ORDER BY id LIMIT $1 OFFSET $2;
+	`
+
+	rows, err := s.db.QueryContext(ctx, query, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var post Post
+
+		err := rows.Scan(
+			&post.ID,
+			&post.UserId,
+			&post.Title,
+			&post.Content,
+			&post.CreatedAt,
+			&post.UpdatedAt,
+			pq.Array(&post.Tags), // Converts PostgreSQL array to Go slice
+		)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, &post)
+	}
+	return posts, nil
+}

@@ -6,7 +6,7 @@ import (
 	"github.com/elhambadri2411/social/internal/db"    // internal package for handling db connections
 	"github.com/elhambadri2411/social/internal/env"   // internal package for extracting and loading env variables
 	"github.com/elhambadri2411/social/internal/store" // internal package, serves as abstraction layer for db
-	"github.com/joho/godotenv"
+	"github.com/joho/godotenv"                        // package for loading environment variables
 )
 
 const version = "0.0.1"
