@@ -26,6 +26,12 @@ type PostsRepository interface {
 
 	// `GetAll` retrieves posts from database (paginated) default offset 0, defulat limit 10
 	GetAll(context.Context, int64, int64) ([]*Post, error)
+
+	// `DeleteById` deletes a post given an id
+	DeleteById(context.Context, int64) error
+
+	// `UpdateById` updates a post given an id
+	UpdateById(context.Context, *Post) (*Post, error)
 }
 
 type CommentsRepository interface {

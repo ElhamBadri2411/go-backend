@@ -163,3 +163,48 @@ func (s *PostsRepositoryPostgres) GetAll(ctx context.Context, limit int64, offse
 	}
 	return posts, nil
 }
+
+func (s *PostsRepositoryPostgres) DeleteById(ctx context.Context, id int64) error {
+	query := `
+		DELETE FROM posts WHERE id = $1
+	`
+
+	// Execute the query and scan the result into the `post` struct.
+	res, err := s.db.ExecContext(ctx, query, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			// If no row is found, return a predefined `ErrNotFound` error.
+			return ErrNotFound
+		default:
+			// Return any other database-related errors.
+			return err
+		}
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return ErrNotFound
+	}
+
+	if rows == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func (s *PostsRepositoryPostgres) UpdateById(ctx context.Context, post *Post) (*Post, error) {
+	// SQL query to fetch a post by its ID.
+	query := `
+		UPDATE posts
+		SET title = $1, content = $2
+		WHERE id = $3
+	`
+	_, err := s.db.ExecContext(ctx, query, post.Title, post.Content, post.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return post, nil
+}
