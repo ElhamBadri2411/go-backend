@@ -4,10 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 // `ErrNotFound` is a predefined error returned when a requested resource does not exist in the database.
-var ErrNotFound = errors.New("resource not found")
+var (
+	ErrNotFound                 = errors.New("resource not found")
+	QueryContextTimeoutDuration = time.Second * 5
+)
 
 // `PostsRepository` defines an interface for managing posts in the database.
 // This interface enforces a contract that any implementation must adhere to.
@@ -31,7 +35,7 @@ type PostsRepository interface {
 	DeleteById(context.Context, int64) error
 
 	// `UpdateById` updates a post given an id
-	UpdateById(context.Context, *Post) (*Post, error)
+	UpdateById(context.Context, *Post) error
 }
 
 type CommentsRepository interface {

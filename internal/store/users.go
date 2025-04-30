@@ -45,6 +45,8 @@ func (s *UsersRepositoryPostgres) Create(ctx context.Context, user *User) error 
 		INSERT INTO users (username, password, email) VALUES ($1, $2, $3) RETURNING id, created_at
 	`
 
+	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
+	defer cancel()
 	// Execute the query and scan the returned values into the `user` struct.
 	err := s.db.QueryRowContext(
 		ctx,

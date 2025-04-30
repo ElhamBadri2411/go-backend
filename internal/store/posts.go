@@ -8,6 +8,7 @@ import (
 
 	// PostgreSQL driver for Go, which includes utilities for handling PostgreSQL-specific data types.
 	// `pq.Array` is used to handle array data types in PostgreSQL.
+
 	"github.com/lib/pq"
 )
 
@@ -32,6 +33,7 @@ type Post struct {
 	Tags      []string  `json:"tags"`
 	CreatedAt string    `json:"created_at"`
 	UpdatedAt string    `json:"updated_at"`
+	Version   int64     `json:"version"`
 	Comments  []Comment `json:"comments"`
 }
 
@@ -56,6 +58,9 @@ func (s *PostsRepositoryPostgres) Create(ctx context.Context, post *Post) error 
 		INSERT INTO posts (content, title, user_id, tags)
 		VALUES ($1, $2, $3, $4) RETURNING id, created_at, updated_at
 	`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
+	defer cancel()
 
 	// Execute the query and scan the returned values into the `post` struct.
 	err := s.db.QueryRowContext(
@@ -93,9 +98,11 @@ func (s *PostsRepositoryPostgres) GetById(ctx context.Context, id int64) (*Post,
 
 	// SQL query to fetch a post by its ID.
 	query := `
-		SELECT id, user_id, title, content, created_at, updated_at, tags FROM posts WHERE id = $1
+		SELECT id, user_id, title, content, created_at, updated_at, tags, version FROM posts WHERE id = $1
 	`
 
+	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
+	defer cancel()
 	// Execute the query and scan the result into the `post` struct.
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&post.ID,
@@ -105,6 +112,7 @@ func (s *PostsRepositoryPostgres) GetById(ctx context.Context, id int64) (*Post,
 		&post.CreatedAt,
 		&post.UpdatedAt,
 		pq.Array(&post.Tags), // Converts PostgreSQL array to Go slice
+		&post.Version,
 	)
 	if err != nil {
 		switch {
@@ -135,9 +143,11 @@ func (s *PostsRepositoryPostgres) GetAll(ctx context.Context, limit int64, offse
 	var posts []*Post
 
 	query := `
-		SELECT id, user_id, title, content, created_at, updated_at, tags FROM posts ORDER BY id LIMIT $1 OFFSET $2;
+		SELECT id, user_id, title, content, created_at, updated_at, tags, version FROM posts ORDER BY id LIMIT $1 OFFSET $2;
 	`
 
+	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
+	defer cancel()
 	rows, err := s.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
 		return nil, err
@@ -155,6 +165,7 @@ func (s *PostsRepositoryPostgres) GetAll(ctx context.Context, limit int64, offse
 			&post.CreatedAt,
 			&post.UpdatedAt,
 			pq.Array(&post.Tags), // Converts PostgreSQL array to Go slice
+			&post.Version,
 		)
 		if err != nil {
 			return nil, err
@@ -169,6 +180,8 @@ func (s *PostsRepositoryPostgres) DeleteById(ctx context.Context, id int64) erro
 		DELETE FROM posts WHERE id = $1
 	`
 
+	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
+	defer cancel()
 	// Execute the query and scan the result into the `post` struct.
 	res, err := s.db.ExecContext(ctx, query, id)
 	if err != nil {
@@ -194,17 +207,31 @@ func (s *PostsRepositoryPostgres) DeleteById(ctx context.Context, id int64) erro
 	return nil
 }
 
-func (s *PostsRepositoryPostgres) UpdateById(ctx context.Context, post *Post) (*Post, error) {
+func (s *PostsRepositoryPostgres) UpdateById(ctx context.Context, post *Post) error {
 	// SQL query to fetch a post by its ID.
 	query := `
 		UPDATE posts
-		SET title = $1, content = $2
-		WHERE id = $3
+		SET title = $1, content = $2, version = version + 1
+		WHERE id = $3 AND version = $4
+		RETURNING version
 	`
-	_, err := s.db.ExecContext(ctx, query, post.Title, post.Content, post.ID)
+
+	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
+	defer cancel()
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		post.Title,
+		post.Content,
+		post.ID,
+		post.Version,
+	).Scan(&post.Version)
 	if err != nil {
-		return nil, err
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrNotFound
+		}
 	}
 
-	return post, nil
+	return nil
 }
