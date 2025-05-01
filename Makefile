@@ -1,5 +1,6 @@
 include .env
 MIGRATIONS_PATH = ./cmd/migrate/migrations/
+SEED_PATH = ./cmd/migrate/seed/main.go
 
 .PHONY: migrate
 migrate:
@@ -12,3 +13,7 @@ up:
 .PHONY: down 
 down:
 	@goose postgres -dir $(MIGRATIONS_PATH) "postgres://user:password@localhost/social?sslmode=disable" down 
+
+.PHONY: seed
+seed:
+	@go run $(SEED_PATH)

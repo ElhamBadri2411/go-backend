@@ -40,6 +40,7 @@ type PostsRepository interface {
 
 type CommentsRepository interface {
 	GetByPostId(context.Context, int64) ([]Comment, error)
+	Create(context.Context, *Comment) error
 }
 
 // `UsersRepository` defines an interface for managing users in the database.

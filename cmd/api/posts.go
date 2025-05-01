@@ -27,8 +27,8 @@ type updatePostPayload struct {
 
 func (app *application) getPostsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	limitParam := chi.URLParam(r, "limit")
-	offsetParam := chi.URLParam(r, "offset")
+	limitParam := r.URL.Query().Get("limit")
+	offsetParam := r.URL.Query().Get("offset")
 
 	if limitParam == "" {
 		limitParam = "10"
