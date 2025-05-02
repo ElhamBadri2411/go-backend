@@ -10,6 +10,7 @@ import (
 // `ErrNotFound` is a predefined error returned when a requested resource does not exist in the database.
 var (
 	ErrNotFound                 = errors.New("resource not found")
+	ErrConflict                 = errors.New("duplicate key violates unique constraint")
 	QueryContextTimeoutDuration = time.Second * 5
 )
 
@@ -50,6 +51,9 @@ type UsersRepository interface {
 	// - `*User`: Pointer to a `User` struct containing user data.
 	// Returns an error if the insertion fails.
 	Create(context.Context, *User) error
+	GetById(context.Context, int64) (*User, error)
+	Follow(context.Context, int64, int64) error
+	Unfollow(context.Context, int64, int64) error
 }
 
 // `Storage` acts as a central repository abstraction layer.

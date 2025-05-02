@@ -3,6 +3,9 @@ package store
 import (
 	"context"      // Provides context management for request cancellation and timeouts
 	"database/sql" // Standard library package for interacting with SQL databases
+	"errors"
+
+	"github.com/lib/pq"
 )
 
 // `User` struct represents a user entity in the database.
@@ -22,6 +25,12 @@ type User struct {
 	Email     string `json:"email"`
 	Password  string `json:"-"` // The `"-"` JSON tag ensures that `Password` is not included in JSON responses.
 	CreatedAt string `json:"created_at"`
+}
+
+type Follower struct {
+	UserID     int64  `json:"user_id"`
+	FollowerId int64  `json:"follower_id"`
+	created_at string `json:"created_at"`
 }
 
 // `UsersRepositoryPostgres` is a concrete implementation of the `UsersRepository` interface.
@@ -60,6 +69,86 @@ func (s *UsersRepositoryPostgres) Create(ctx context.Context, user *User) error 
 	)
 	if err != nil {
 		return err // Return the error if the insertion fails
+	}
+
+	return nil
+}
+
+func (s *UsersRepositoryPostgres) GetById(ctx context.Context, id int64) (*User, error) {
+	query := `
+		SELECT id, email, username, created_at FROM users WHERE id = $1 
+	`
+	var user User
+	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
+	defer cancel()
+
+	err := s.db.QueryRowContext(ctx, query, id).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Username,
+		&user.CreatedAt,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
+
+func (s *UsersRepositoryPostgres) Follow(ctx context.Context, userToFollowId int64, userId int64) error {
+	query := `
+		INSERT INTO followers (user_id, follower_id) VALUES ($1, $2)
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
+	defer cancel()
+	// Execute the query and scan the returned values into the `user` struct.
+	_, err := s.db.ExecContext(
+		ctx,
+		query,
+		userToFollowId,
+		userId,
+	)
+	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
+			return ErrConflict
+		}
+	}
+
+	return err
+}
+
+func (s *UsersRepositoryPostgres) Unfollow(ctx context.Context, userToFollowId int64, userId int64) error {
+	query := `
+	DELETE FROM followers WHERE (user_id, follower_id) = ($1, $2)  
+	`
+	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
+	defer cancel()
+	// Execute the query and scan the result into the `post` struct.
+	res, err := s.db.ExecContext(ctx, query, userToFollowId, userId)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			// If no row is found, return a predefined `ErrNotFound` error.
+			return ErrNotFound
+		default:
+			// Return any other database-related errors.
+			return err
+		}
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return ErrNotFound
+	}
+
+	if rows == 0 {
+		return ErrNotFound
 	}
 
 	return nil

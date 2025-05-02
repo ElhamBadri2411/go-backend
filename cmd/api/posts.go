@@ -124,6 +124,7 @@ func (app *application) updatePostByIdHandler(w http.ResponseWriter, r *http.Req
 	err := app.store.PostsRepository.UpdateById(r.Context(), post)
 	if err != nil {
 		app.internalServerError(w, r, err)
+		return
 	}
 
 	if err := app.jsonResponse(w, http.StatusOK, post); err != nil {
