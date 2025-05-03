@@ -37,6 +37,8 @@ type PostsRepository interface {
 
 	// `UpdateById` updates a post given an id
 	UpdateById(context.Context, *Post) error
+
+	GetUserFeed(context.Context, int64) ([]*FeedPost, error)
 }
 
 type CommentsRepository interface {

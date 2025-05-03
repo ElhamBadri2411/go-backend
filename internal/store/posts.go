@@ -35,6 +35,12 @@ type Post struct {
 	UpdatedAt string    `json:"updated_at"`
 	Version   int64     `json:"version"`
 	Comments  []Comment `json:"comments"`
+	User      User      `json:"user"`
+}
+
+type FeedPost struct {
+	Post
+	CommentCount int `json:"comments_count"`
 }
 
 // `PostsRepositoryPostgres` is a concrete implementation of the `PostsRepository` interface.
@@ -234,4 +240,47 @@ func (s *PostsRepositoryPostgres) UpdateById(ctx context.Context, post *Post) er
 	}
 
 	return nil
+}
+
+func (s *PostsRepositoryPostgres) GetUserFeed(ctx context.Context, userId int64) ([]*FeedPost, error) {
+	query := `
+		SELECT p.id, p.title, p."content", p.user_id, p.created_at, p.tags, u.username, COUNT(c.id) AS comments_count
+		FROM posts p 
+		LEFT JOIN "comments" c ON c.post_id=p.id
+		LEFT JOIN users u  ON  p.user_id = u.id 
+		JOIN followers f ON f.user_id = p.user_id or p.user_id = $1
+		WHERE f.follower_id = $1 
+		GROUP BY p.id, u.username  
+		ORDER BY p.created_at DESC;
+	`
+	var feedPosts []*FeedPost
+
+	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
+	defer cancel()
+
+	rows, err := s.db.QueryContext(ctx, query, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var feedPost FeedPost
+
+		err := rows.Scan(
+			&feedPost.ID,
+			&feedPost.Title,
+			&feedPost.Content,
+			&feedPost.UserId,
+			&feedPost.CreatedAt,
+			pq.Array(&feedPost.Tags), // Converts PostgreSQL array to Go slice
+			&feedPost.User.Username,
+			&feedPost.CommentCount,
+		)
+		if err != nil {
+			return nil, err
+		}
+		feedPosts = append(feedPosts, &feedPost)
+	}
+	return feedPosts, nil
 }
