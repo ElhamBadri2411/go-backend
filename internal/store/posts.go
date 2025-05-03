@@ -242,23 +242,24 @@ func (s *PostsRepositoryPostgres) UpdateById(ctx context.Context, post *Post) er
 	return nil
 }
 
-func (s *PostsRepositoryPostgres) GetUserFeed(ctx context.Context, userId int64) ([]*FeedPost, error) {
+func (s *PostsRepositoryPostgres) GetUserFeed(ctx context.Context, userId int64, pfq PaginatedFeedQuery) ([]*FeedPost, error) {
 	query := `
 		SELECT p.id, p.title, p."content", p.user_id, p.created_at, p.tags, u.username, COUNT(c.id) AS comments_count
 		FROM posts p 
 		LEFT JOIN "comments" c ON c.post_id=p.id
 		LEFT JOIN users u  ON  p.user_id = u.id 
 		JOIN followers f ON f.user_id = p.user_id or p.user_id = $1
-		WHERE f.follower_id = $1 
-		GROUP BY p.id, u.username  
-		ORDER BY p.created_at DESC;
+		WHERE f.follower_id = $1
+		GROUP BY p.id, u.username
+		ORDER BY p.created_at ` + pfq.Sort + ` 
+		LIMIT $2 OFFSET $3;
 	`
 	var feedPosts []*FeedPost
 
 	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
 	defer cancel()
 
-	rows, err := s.db.QueryContext(ctx, query, userId)
+	rows, err := s.db.QueryContext(ctx, query, userId, pfq.Limit, pfq.Offset)
 	if err != nil {
 		return nil, err
 	}
