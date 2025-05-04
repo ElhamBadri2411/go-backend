@@ -11,6 +11,7 @@ func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Reques
 		Limit:  20,
 		Offset: 0,
 		Sort:   "desc",
+		Search: "",
 	}
 
 	pfq, err := pfq.Parse(r)

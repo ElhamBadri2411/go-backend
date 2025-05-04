@@ -249,7 +249,10 @@ func (s *PostsRepositoryPostgres) GetUserFeed(ctx context.Context, userId int64,
 		LEFT JOIN "comments" c ON c.post_id=p.id
 		LEFT JOIN users u  ON  p.user_id = u.id 
 		JOIN followers f ON f.user_id = p.user_id or p.user_id = $1
-		WHERE f.follower_id = $1
+		WHERE 
+			f.follower_id = $1 AND 
+			(p.title ILIKE '%' || $4 || '%' OR  p.content ILIKE '%' || $4 || '%' ) AND
+			(p.tags @> $5 OR $5 IS NULL)
 		GROUP BY p.id, u.username
 		ORDER BY p.created_at ` + pfq.Sort + ` 
 		LIMIT $2 OFFSET $3;
@@ -259,7 +262,7 @@ func (s *PostsRepositoryPostgres) GetUserFeed(ctx context.Context, userId int64,
 	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
 	defer cancel()
 
-	rows, err := s.db.QueryContext(ctx, query, userId, pfq.Limit, pfq.Offset)
+	rows, err := s.db.QueryContext(ctx, query, userId, pfq.Limit, pfq.Offset, pfq.Search, pq.Array(pfq.Tags))
 	if err != nil {
 		return nil, err
 	}
