@@ -11,6 +11,21 @@ import (
 
 const version = "0.0.1"
 
+//	@title			GolangSocial
+//	@description	API for Social media for developers
+//	@termsOfService	http://swagger.io/terms/
+
+//	@contact.name	API Support
+//	@contact.url	http://www.swagger.io/support
+//	@contact.email	support@swagger.io
+
+// @license.name				Apache 2.0
+// @license.url				http://www.apache.org/licenses/LICENSE-2.0.html
+//
+// @securityDefinitions.apikey	ApiKeyAuth
+// @in							header
+// @name						Authorization
+// @description
 func main() {
 	// Loads env from a .env file
 	err := godotenv.Load()
@@ -33,8 +48,9 @@ func main() {
 		variables, providing default values when the variables are not set.
 	*/
 	config := config{
-		addr: env.GetString("ADDR", ":8080"),
-		env:  env.GetString("ENV", "DEV"),
+		addr:   env.GetString("ADDR", ":8080"),
+		env:    env.GetString("ENV", "DEV"),
+		apiUrl: env.GetString("EXTERNAL_URL", "localhost:3000"),
 		db: dbConfig{
 			url:          env.GetString("DB_URL", "postgres://user:password@localhost/social?sslmode=disable"),
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),

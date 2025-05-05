@@ -1,13 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/elhambadri2411/social/docs"           // internal package, used for generating swagger docs
 	"github.com/elhambadri2411/social/internal/store" // internal package, serves as abstraction layer for db
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // `application` config struct which represents application context
@@ -18,9 +21,10 @@ type application struct {
 
 // `config` struct stores application configuration, including:
 type config struct {
-	addr string   // port
-	db   dbConfig // db config settings
-	env  string   // env (PROD or DEV)
+	addr   string   // port
+	db     dbConfig // db config settings
+	env    string   // env (PROD or DEV)
+	apiUrl string   // the external url
 }
 
 // `dbConfig` struct hold db related config
@@ -34,6 +38,10 @@ type dbConfig struct {
 // `mount` initializes and configures the HTTP router using `chi`.
 // It sets up routes, applies middleware, and groups API endpoints.
 func (app *application) mount() *chi.Mux {
+	// Docs
+	docs.SwaggerInfo.Version = version
+	docs.SwaggerInfo.Host = app.config.apiUrl
+	docs.SwaggerInfo.BasePath = "/v1"
 	r := chi.NewRouter() // create new Chi router instance
 
 	r.Use(middleware.RequestID) // Assign request Id to each req
@@ -48,6 +56,9 @@ func (app *application) mount() *chi.Mux {
 	// Define API routes under the `/v1` prefix
 	r.Route("/v1", func(r chi.Router) {
 		r.Get("/health", app.healthCheckHandler)
+		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.addr)
+
+		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
 
 		r.Route("/posts", func(r chi.Router) {
 			r.Post("/", app.createPostsHandler)
