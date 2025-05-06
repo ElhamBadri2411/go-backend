@@ -21,3 +21,7 @@ seed:
 .PHONY: gen-docs
 gen-docs:
 	@swag init -g ./api/main.go -d cmd,internal && swag fmt
+
+.PHONY: run
+run:
+	@swag init -g ./api/main.go -d cmd,internal && swag fmt && go run ./cmd/api/*.go

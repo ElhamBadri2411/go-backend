@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql" // Standard library package for interacting with SQL databases
-	"log"
 	"time"
 )
 
@@ -23,7 +22,6 @@ func New(url string, maxOpenConns int, maxIdleConns int, maxIdleTime string) (*s
 	if err != nil {
 		return nil, err
 	}
-	log.Println("Connected to db")
 
 	// Parse `maxIdleTime` into a `time.Duration` object.
 	// This determines how long idle connections remain open before being closed.

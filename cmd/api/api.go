@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -11,12 +10,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"go.uber.org/zap"
 )
 
 // `application` config struct which represents application context
 type application struct {
-	config config        // app level config settings
-	store  store.Storage // "Repository"
+	config config             // app level config settings
+	store  store.Storage      // "Repository"
+	logger *zap.SugaredLogger // logger
 }
 
 // `config` struct stores application configuration, including:
@@ -101,6 +102,7 @@ func (app *application) run(mux *chi.Mux) error {
 		IdleTimeout:  time.Minute,      // Max idle time for keep-alive connections (1 min)
 	}
 
-	log.Printf("Server listening on %s\n", app.config.addr)
+	app.logger.Infow("Server listening", "addr", app.config.addr, "env", app.config.env)
+
 	return server.ListenAndServe()
 }

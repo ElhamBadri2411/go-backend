@@ -1,12 +1,11 @@
 package main
 
 import (
-	"log"
-
 	"github.com/elhambadri2411/social/internal/db"    // internal package for handling db connections
 	"github.com/elhambadri2411/social/internal/env"   // internal package for extracting and loading env variables
 	"github.com/elhambadri2411/social/internal/store" // internal package, serves as abstraction layer for db
 	"github.com/joho/godotenv"                        // package for loading environment variables
+	"go.uber.org/zap"
 )
 
 const version = "0.0.1"
@@ -27,10 +26,12 @@ const version = "0.0.1"
 // @name						Authorization
 // @description
 func main() {
+	logger := zap.Must(zap.NewProduction()).Sugar()
+	defer logger.Sync()
 	// Loads env from a .env file
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("WARNING: Env failed to load")
+		logger.Fatal("WARNING: Env failed to load")
 	}
 
 	/*
@@ -63,6 +64,7 @@ func main() {
 	// db.New returns a database instance
 	db, err := db.New(config.db.url, config.db.maxOpenConns, config.db.maxIdleConns, config.db.maxIdleTime)
 	if err != nil {
+		logger.Fatal(err)
 		db.Close()
 	}
 	defer db.Close()
@@ -77,6 +79,7 @@ func main() {
 	app := application{
 		config: config,
 		store:  store,
+		logger: logger,
 	}
 
 	// Mount the application's HTTP handlers (routes) onto a multiplexer (`mux`).
@@ -85,5 +88,5 @@ func main() {
 
 	// Start the application server and log any errors that occur.
 	// `app.run(mux)` is expected to start an HTTP server and listen for requests.
-	log.Println(app.run(mux))
+	logger.Info(app.run(mux))
 }
