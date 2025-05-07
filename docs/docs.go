@@ -24,6 +24,40 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/authentication/user": {
+            "post": {
+                "description": "Registers a user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication"
+                ],
+                "summary": "Registers a user",
+                "parameters": [
+                    {
+                        "description": "User credentials",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.registerUserPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User registered",
+                        "schema": {
+                            "$ref": "#/definitions/store.User"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Healthcheck endpoint",
@@ -490,6 +524,28 @@ const docTemplate = `{
                 }
             }
         },
+        "main.registerUserPayload": {
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 225
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 100
+                }
+            }
+        },
         "main.updatePostPayload": {
             "type": "object",
             "properties": {
@@ -570,6 +626,9 @@ const docTemplate = `{
                 }
             }
         },
+        "store.Password": {
+            "type": "object"
+        },
         "store.Post": {
             "type": "object",
             "properties": {
@@ -622,6 +681,14 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "password": {
+                    "description": "The ` + "`" + `\"-\"` + "`" + ` JSON tag ensures that ` + "`" + `Password` + "`" + ` is not included in JSON responses.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/store.Password"
+                        }
+                    ]
                 },
                 "username": {
                     "type": "string"

@@ -22,10 +22,11 @@ type application struct {
 
 // `config` struct stores application configuration, including:
 type config struct {
-	addr   string   // port
-	db     dbConfig // db config settings
-	env    string   // env (PROD or DEV)
-	apiUrl string   // the external url
+	addr   string     // port
+	db     dbConfig   // db config settings
+	env    string     // env (PROD or DEV)
+	apiUrl string     // the external url
+	mail   mailConfig // mail config settings
 }
 
 // `dbConfig` struct hold db related config
@@ -34,6 +35,11 @@ type dbConfig struct {
 	maxOpenConns int    // max number of open connections
 	maxIdleConns int    // max number of idle connections
 	maxIdleTime  string // max idle time before connections close
+}
+
+// `mailConfig hols mail related config`
+type mailConfig struct {
+	exp time.Duration // how long before invites expire
 }
 
 // `mount` initializes and configures the HTTP router using `chi`.
@@ -85,6 +91,11 @@ func (app *application) mount() *chi.Mux {
 			r.Group(func(r chi.Router) {
 				r.Get("/feed", app.getUserFeedHandler)
 			})
+		})
+
+		// Public
+		r.Route("/authentication", func(r chi.Router) {
+			r.Post("/user", app.registerUserHandler)
 		})
 	})
 

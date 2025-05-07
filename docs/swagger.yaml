@@ -15,6 +15,22 @@ definitions:
     - content
     - title
     type: object
+  main.registerUserPayload:
+    properties:
+      email:
+        maxLength: 225
+        type: string
+      password:
+        maxLength: 100
+        type: string
+      username:
+        maxLength: 100
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
   main.updatePostPayload:
     properties:
       content:
@@ -68,6 +84,8 @@ definitions:
       version:
         type: integer
     type: object
+  store.Password:
+    type: object
   store.Post:
     properties:
       comments:
@@ -103,6 +121,11 @@ definitions:
         type: string
       id:
         type: integer
+      password:
+        allOf:
+        - $ref: '#/definitions/store.Password'
+        description: The `"-"` JSON tag ensures that `Password` is not included in
+          JSON responses.
       username:
         type: string
     type: object
@@ -118,6 +141,28 @@ info:
   termsOfService: http://swagger.io/terms/
   title: GolangSocial
 paths:
+  /authentication/user:
+    post:
+      consumes:
+      - application/json
+      description: Registers a user
+      parameters:
+      - description: User credentials
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.registerUserPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered
+          schema:
+            $ref: '#/definitions/store.User'
+      summary: Registers a user
+      tags:
+      - authentication
   /health:
     get:
       description: Healthcheck endpoint

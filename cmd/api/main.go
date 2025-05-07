@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/elhambadri2411/social/internal/db"    // internal package for handling db connections
 	"github.com/elhambadri2411/social/internal/env"   // internal package for extracting and loading env variables
 	"github.com/elhambadri2411/social/internal/store" // internal package, serves as abstraction layer for db
@@ -57,6 +59,9 @@ func main() {
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
 			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
+		},
+		mail: mailConfig{
+			exp: time.Hour * 8,
 		},
 	}
 

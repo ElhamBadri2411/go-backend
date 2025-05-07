@@ -12,6 +12,8 @@ var (
 	ErrNotFound                 = errors.New("resource not found")
 	ErrConflict                 = errors.New("duplicate key violates unique constraint")
 	QueryContextTimeoutDuration = time.Second * 5
+	ErrDuplicateEmail           = errors.New("there is already an account with that email")
+	ErrDuplicateUsername        = errors.New("the username already exists")
 )
 
 // `PostsRepository` defines an interface for managing posts in the database.
@@ -52,10 +54,11 @@ type UsersRepository interface {
 	// - `context.Context`: Ensures request timeouts and cancellations are respected.
 	// - `*User`: Pointer to a `User` struct containing user data.
 	// Returns an error if the insertion fails.
-	Create(context.Context, *User) error
+	Create(context.Context, *sql.Tx, *User) error
 	GetById(context.Context, int64) (*User, error)
 	Follow(context.Context, int64, int64) error
 	Unfollow(context.Context, int64, int64) error
+	CreateAndInvite(context.Context, *User, string, time.Duration) error
 }
 
 // `Storage` acts as a central repository abstraction layer.
@@ -80,4 +83,22 @@ func NewStorage(db *sql.DB) Storage {
 		UsersRepository:    &UsersRepositoryPostgres{db}, // Instantiate PostgreSQL-backed users repository
 		CommentsRepository: &CommentRepositoryPostgres{db},
 	}
+}
+
+func withTx(db *sql.DB, ctx context.Context, fn func(*sql.Tx) error) error {
+	opts := &sql.TxOptions{
+		Isolation: sql.LevelReadCommitted,
+		ReadOnly:  false,
+	}
+	tx, err := db.BeginTx(ctx, opts)
+	if err != nil {
+		return err
+	}
+
+	if err := fn(tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
