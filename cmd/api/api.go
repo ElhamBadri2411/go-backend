@@ -5,7 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/elhambadri2411/social/docs"           // internal package, used for generating swagger docs
+	"github.com/elhambadri2411/social/docs" // internal package, used for generating swagger docs
+	"github.com/elhambadri2411/social/internal/mailer"
 	"github.com/elhambadri2411/social/internal/store" // internal package, serves as abstraction layer for db
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -18,15 +19,17 @@ type application struct {
 	config config             // app level config settings
 	store  store.Storage      // "Repository"
 	logger *zap.SugaredLogger // logger
+	mailer mailer.Client
 }
 
 // `config` struct stores application configuration, including:
 type config struct {
-	addr   string     // port
-	db     dbConfig   // db config settings
-	env    string     // env (PROD or DEV)
-	apiUrl string     // the external url
-	mail   mailConfig // mail config settings
+	addr        string     // port
+	db          dbConfig   // db config settings
+	env         string     // env (PROD or DEV)
+	apiUrl      string     // the external url
+	mail        mailConfig // mail config settings
+	frontendUrl string     // url for the frontend
 }
 
 // `dbConfig` struct hold db related config
@@ -39,7 +42,13 @@ type dbConfig struct {
 
 // `mailConfig hols mail related config`
 type mailConfig struct {
-	exp time.Duration // how long before invites expire
+	exp       time.Duration  // how long before invites expire
+	fromEmail string         // the email from which the sends come from
+	sendGrid  sendGridConfig // sendGrid config type
+}
+
+type sendGridConfig struct {
+	apiKey string // sendgrid api key
 }
 
 // `mount` initializes and configures the HTTP router using `chi`.

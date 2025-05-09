@@ -301,3 +301,35 @@ func (s *UsersRepositoryPostgres) deleteInvite(ctx context.Context, tx *sql.Tx, 
 
 	return nil
 }
+
+func (s *UsersRepositoryPostgres) deleteUser(ctx context.Context, tx *sql.Tx, id int64) error {
+	query := `
+		DELETE FROM users WHERE id = $1 
+	`
+	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
+	defer cancel()
+
+	_, err := tx.ExecContext(ctx, query, id)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return ErrNotFound
+	default:
+		return err
+	}
+
+	return nil
+}
+
+func (s *UsersRepositoryPostgres) Delete(ctx context.Context, id int64) error {
+	return withTx(s.db, ctx, func(tx *sql.Tx) error {
+		if err := s.deleteUser(ctx, tx, id); err != nil {
+			return err
+		}
+
+		if err := s.deleteInvite(ctx, tx, id); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}

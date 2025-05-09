@@ -3,8 +3,9 @@ package main
 import (
 	"time"
 
-	"github.com/elhambadri2411/social/internal/db"    // internal package for handling db connections
-	"github.com/elhambadri2411/social/internal/env"   // internal package for extracting and loading env variables
+	"github.com/elhambadri2411/social/internal/db"  // internal package for handling db connections
+	"github.com/elhambadri2411/social/internal/env" // internal package for extracting and loading env variables
+	"github.com/elhambadri2411/social/internal/mailer"
 	"github.com/elhambadri2411/social/internal/store" // internal package, serves as abstraction layer for db
 	"github.com/joho/godotenv"                        // package for loading environment variables
 	"go.uber.org/zap"
@@ -51,9 +52,10 @@ func main() {
 		variables, providing default values when the variables are not set.
 	*/
 	config := config{
-		addr:   env.GetString("ADDR", ":8080"),
-		env:    env.GetString("ENV", "DEV"),
-		apiUrl: env.GetString("EXTERNAL_URL", "localhost:3000"),
+		addr:        env.GetString("ADDR", ":8080"),
+		env:         env.GetString("ENV", "DEV"),
+		apiUrl:      env.GetString("EXTERNAL_URL", "localhost:3000"),
+		frontendUrl: env.GetString("FRONTEND_URL", "localhost:3001"),
 		db: dbConfig{
 			url:          env.GetString("DB_URL", "postgres://user:password@localhost/social?sslmode=disable"),
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
@@ -61,7 +63,11 @@ func main() {
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
 		mail: mailConfig{
-			exp: time.Hour * 8,
+			exp:       time.Hour * 8,
+			fromEmail: env.GetString("FROM_EMAIL", "test@mail.com"),
+			sendGrid: sendGridConfig{
+				apiKey: env.GetString("SENDGRID_API_KEY", ""),
+			},
 		},
 	}
 
@@ -79,12 +85,16 @@ func main() {
 	// for querying, inserting, updating, and deleting records in the database.
 	store := store.NewStorage(db)
 
+	// Initialize a new `mailer` which is the interface for sending emails
+	mailer := mailer.NewSendgrid(config.mail.sendGrid.apiKey, config.mail.fromEmail)
+
 	// Create an `application` instance which encapsulates configuration settings
 	// and storage, making them accessible throughout the application.
 	app := application{
 		config: config,
 		store:  store,
 		logger: logger,
+		mailer: mailer,
 	}
 
 	// Mount the application's HTTP handlers (routes) onto a multiplexer (`mux`).
