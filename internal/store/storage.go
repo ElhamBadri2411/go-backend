@@ -59,6 +59,7 @@ type UsersRepository interface {
 	Follow(context.Context, int64, int64) error
 	Unfollow(context.Context, int64, int64) error
 	CreateAndInvite(context.Context, *User, string, time.Duration) error
+	Activate(context.Context, string) error
 }
 
 // `Storage` acts as a central repository abstraction layer.

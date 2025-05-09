@@ -52,7 +52,7 @@ const docTemplate = `{
                     "201": {
                         "description": "User registered",
                         "schema": {
-                            "$ref": "#/definitions/store.User"
+                            "$ref": "#/definitions/main.UserWithToken"
                         }
                     }
                 }
@@ -273,6 +273,40 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {}
+                    }
+                }
+            }
+        },
+        "/users/activate/{token}": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Activates a user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication"
+                ],
+                "summary": "Activates a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Invitation token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "User activated",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
@@ -501,6 +535,32 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "main.UserWithToken": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "password": {
+                    "$ref": "#/definitions/store.Password"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "main.createPostPayload": {
             "type": "object",
             "required": [
@@ -682,13 +742,11 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "is_active": {
+                    "type": "boolean"
+                },
                 "password": {
-                    "description": "The ` + "`" + `\"-\"` + "`" + ` JSON tag ensures that ` + "`" + `Password` + "`" + ` is not included in JSON responses.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/store.Password"
-                        }
-                    ]
+                    "$ref": "#/definitions/store.Password"
                 },
                 "username": {
                     "type": "string"

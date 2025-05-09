@@ -1,4 +1,21 @@
 definitions:
+  main.UserWithToken:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      password:
+        $ref: '#/definitions/store.Password'
+      token:
+        type: string
+      username:
+        type: string
+    type: object
   main.createPostPayload:
     properties:
       content:
@@ -121,11 +138,10 @@ definitions:
         type: string
       id:
         type: integer
+      is_active:
+        type: boolean
       password:
-        allOf:
-        - $ref: '#/definitions/store.Password'
-        description: The `"-"` JSON tag ensures that `Password` is not included in
-          JSON responses.
+        $ref: '#/definitions/store.Password'
       username:
         type: string
     type: object
@@ -159,7 +175,7 @@ paths:
         "201":
           description: User registered
           schema:
-            $ref: '#/definitions/store.User'
+            $ref: '#/definitions/main.UserWithToken'
       summary: Registers a user
       tags:
       - authentication
@@ -396,6 +412,27 @@ paths:
       summary: Unfollow a user
       tags:
       - users
+  /users/activate/{token}:
+    put:
+      description: Activates a user
+      parameters:
+      - description: Invitation token
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: User activated
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Activates a user
+      tags:
+      - authentication
   /users/feed:
     get:
       consumes:

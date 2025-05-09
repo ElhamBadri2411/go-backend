@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/elhambadri2411/social/internal/store"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
@@ -13,6 +14,11 @@ type registerUserPayload struct {
 	Username string `json:"username" validate:"required,max=100"`
 	Email    string `json:"email" validate:"required,email,max=225"`
 	Password string `json:"password" validate:"required,max=100"`
+}
+
+type UserWithToken struct {
+	*store.User
+	Token string `json:"token"`
 }
 
 // registerUserHandle godoc
@@ -23,7 +29,7 @@ type registerUserPayload struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			payload	body		registerUserPayload	true	"User credentials"
-//	@Success		201		{object}	store.User			"User registered"
+//	@Success		201		{object}	UserWithToken		"User registered"
 //	@Failiure		400 {object} error
 //	@Failiure		500 {object} error
 //	@Router			/authentication/user [post]
@@ -69,10 +75,46 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		}
 		return
 	}
+	userWithToken := UserWithToken{
+		User:  user,
+		Token: plainToken,
+	}
 
 	// mail
 
-	if err := app.jsonResponse(w, http.StatusCreated, nil); err != nil {
+	if err := app.jsonResponse(w, http.StatusCreated, userWithToken); err != nil {
 		app.internalServerError(w, r, err)
+	}
+}
+
+// activateuserHandle godoc
+//
+//	@Summary		Activates a user
+//	@Description	Activates a user
+//	@Tags			authentication
+//	@Produce		json
+//	@Param			token	path		string	true	"Invitation token"
+//	@Success		204		{string}	string	"User activated"
+//	@Failiure		400 {object} error
+//	@Failiure		500 {object} error
+//	@Security		ApiKeyAuth
+//	@Router			/users/activate/{token} [put]
+func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
+	token := chi.URLParam(r, "token")
+
+	err := app.store.UsersRepository.Activate(r.Context(), token)
+	if err != nil {
+		switch err {
+		case store.ErrNotFound:
+			app.badRequestResponse(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusNoContent, "User activated"); err != nil {
+		app.internalServerError(w, r, err)
+		return
 	}
 }
