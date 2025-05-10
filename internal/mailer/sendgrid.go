@@ -49,6 +49,7 @@ func (m *SendGridMailer) Send(templateFile, username, email string, data any, is
 	}
 	message := mail.NewSingleEmail(from, subject.String(), to, "", body.String())
 
+	// isSandbox = false
 	message.SetMailSettings(&mail.MailSettings{
 		SandboxMode: &mail.Setting{
 			Enable: &isSandbox,
@@ -56,7 +57,7 @@ func (m *SendGridMailer) Send(templateFile, username, email string, data any, is
 	})
 
 	for i := 0; i < MaxRetries; i++ {
-		_, err := m.client.Send(message)
+		res, err := m.client.Send(message)
 		if err != nil {
 			log.Printf("Failed to send email to %v, attempt %d / %d", email, i, MaxRetries)
 			log.Printf("Error: %v", err.Error())
@@ -64,6 +65,9 @@ func (m *SendGridMailer) Send(templateFile, username, email string, data any, is
 			// exponential backoff
 			time.Sleep(time.Second * time.Duration(i+1))
 			continue
+		} else {
+			log.Printf("SendGrid response (attempt %d): status=%d, body=%q",
+				i+1, res.StatusCode, res.Body)
 		}
 
 		log.Printf("Email sent successfully to %v", email)
