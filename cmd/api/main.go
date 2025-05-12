@@ -69,6 +69,13 @@ func main() {
 				apiKey: env.GetString("SENDGRID_API_KEY", ""),
 			},
 		},
+
+		auth: authConfig{
+			basic: basicConfig{
+				username: env.GetString("BASIC_USERNAME", "user"),
+				password: env.GetString("BASIC_PASSWORD", "password"),
+			},
+		},
 	}
 
 	// Init a new db connections with configuration setup

@@ -22,6 +22,17 @@ type application struct {
 	mailer mailer.Client
 }
 
+// `authConfig` struct stores applciation auth configuration
+type authConfig struct {
+	basic basicConfig // basic auth config options
+}
+
+// `basicConfig` struct stores applciation basic style auth configuration
+type basicConfig struct {
+	username string // username for basic auth
+	password string // password for basic auth
+}
+
 // `config` struct stores application configuration, including:
 type config struct {
 	addr        string     // port
@@ -29,6 +40,7 @@ type config struct {
 	env         string     // env (PROD or DEV)
 	apiUrl      string     // the external url
 	mail        mailConfig // mail config settings
+	auth        authConfig // auth config settings
 	frontendUrl string     // url for the frontend
 }
 
@@ -71,7 +83,7 @@ func (app *application) mount() *chi.Mux {
 
 	// Define API routes under the `/v1` prefix
 	r.Route("/v1", func(r chi.Router) {
-		r.Get("/health", app.healthCheckHandler)
+		r.With(app.BasicAuthMiddleware()).Get("/health", app.healthCheckHandler)
 		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.addr)
 
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
