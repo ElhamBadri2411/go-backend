@@ -1,21 +1,4 @@
 definitions:
-  main.UserWithToken:
-    properties:
-      created_at:
-        type: string
-      email:
-        type: string
-      id:
-        type: integer
-      is_active:
-        type: boolean
-      password:
-        $ref: '#/definitions/store.Password'
-      token:
-        type: string
-      username:
-        type: string
-    type: object
   main.createPostPayload:
     properties:
       content:
@@ -31,6 +14,18 @@ definitions:
     required:
     - content
     - title
+    type: object
+  main.createUserTokenPayload:
+    properties:
+      email:
+        maxLength: 225
+        type: string
+      password:
+        maxLength: 100
+        type: string
+    required:
+    - email
+    - password
     type: object
   main.registerUserPayload:
     properties:
@@ -55,6 +50,23 @@ definitions:
         type: string
       title:
         maxLength: 100
+        type: string
+    type: object
+  main.userWithToken:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      password:
+        $ref: '#/definitions/store.Password'
+      token:
+        type: string
+      username:
         type: string
     type: object
   store.Comment:
@@ -157,6 +169,29 @@ info:
   termsOfService: http://swagger.io/terms/
   title: GolangSocial
 paths:
+  /authentication/token:
+    post:
+      consumes:
+      - application/json
+      description: creates a user
+      parameters:
+      - description: User credentials
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.createUserTokenPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token
+          schema:
+            type: string
+      security: []
+      summary: creates a token
+      tags:
+      - authentication
   /authentication/user:
     post:
       consumes:
@@ -175,7 +210,7 @@ paths:
         "201":
           description: User registered
           schema:
-            $ref: '#/definitions/main.UserWithToken'
+            $ref: '#/definitions/main.userWithToken'
       summary: Registers a user
       tags:
       - authentication

@@ -137,7 +137,7 @@ func (s *UsersRepositoryPostgres) createUserInvitation(ctx context.Context, tx *
 
 func (s *UsersRepositoryPostgres) GetById(ctx context.Context, id int64) (*User, error) {
 	query := `
-		SELECT id, email, username, created_at FROM users WHERE id = $1 
+		SELECT id, email, username, created_at FROM users WHERE id = $1 AND is_active = true
 	`
 	var user User
 	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
@@ -316,8 +316,6 @@ func (s *UsersRepositoryPostgres) deleteUser(ctx context.Context, tx *sql.Tx, id
 	default:
 		return err
 	}
-
-	return nil
 }
 
 func (s *UsersRepositoryPostgres) Delete(ctx context.Context, id int64) error {
@@ -332,4 +330,31 @@ func (s *UsersRepositoryPostgres) Delete(ctx context.Context, id int64) error {
 
 		return nil
 	})
+}
+
+func (s *UsersRepositoryPostgres) GetByEmail(ctx context.Context, email string) (*User, error) {
+	query := `
+		SELECT id, email, username, password, created_at FROM users WHERE email = $1 AND is_active = true
+	`
+	var user User
+	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
+	defer cancel()
+
+	err := s.db.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Username,
+		&user.CreatedAt,
+		&user.Password.hash,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
 }

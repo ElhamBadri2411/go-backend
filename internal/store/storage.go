@@ -50,10 +50,6 @@ type CommentsRepository interface {
 
 // `UsersRepository` defines an interface for managing users in the database.
 type UsersRepository interface {
-	// `Create` inserts a new user into the database.
-	// - `context.Context`: Ensures request timeouts and cancellations are respected.
-	// - `*User`: Pointer to a `User` struct containing user data.
-	// Returns an error if the insertion fails.
 	Create(context.Context, *sql.Tx, *User) error
 	GetById(context.Context, int64) (*User, error)
 	Follow(context.Context, int64, int64) error
@@ -61,6 +57,7 @@ type UsersRepository interface {
 	CreateAndInvite(context.Context, *User, string, time.Duration) error
 	Activate(context.Context, string) error
 	Delete(context.Context, int64) error
+	GetByEmail(context.Context, string) (*User, error)
 }
 
 // `Storage` acts as a central repository abstraction layer.

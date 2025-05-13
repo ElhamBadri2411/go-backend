@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"github.com/elhambadri2411/social/internal/auth"
 	"github.com/elhambadri2411/social/internal/db"  // internal package for handling db connections
 	"github.com/elhambadri2411/social/internal/env" // internal package for extracting and loading env variables
 	"github.com/elhambadri2411/social/internal/mailer"
@@ -75,6 +76,11 @@ func main() {
 				username: env.GetString("BASIC_USERNAME", "user"),
 				password: env.GetString("BASIC_PASSWORD", "password"),
 			},
+			token: tokenConfig{
+				secret:     env.GetString("SECRET", "secretwaffle123"),
+				expiration: time.Hour * 36,
+				issuer:     "devsocial",
+			},
 		},
 	}
 
@@ -95,13 +101,17 @@ func main() {
 	// Initialize a new `mailer` which is the interface for sending emails
 	mailer := mailer.NewSendgrid(config.mail.sendGrid.apiKey, config.mail.fromEmail)
 
+	// Initialize a new `jwtAuthenticator` an interface for generating and validaitng jwt tokens
+	jwtAuthenticator := auth.NewJWTAuthenticator(config.auth.token.secret, config.auth.token.issuer, config.auth.token.issuer)
+
 	// Create an `application` instance which encapsulates configuration settings
 	// and storage, making them accessible throughout the application.
 	app := application{
-		config: config,
-		store:  store,
-		logger: logger,
-		mailer: mailer,
+		config:        config,
+		store:         store,
+		logger:        logger,
+		mailer:        mailer,
+		authenticator: jwtAuthenticator,
 	}
 
 	// Mount the application's HTTP handlers (routes) onto a multiplexer (`mux`).

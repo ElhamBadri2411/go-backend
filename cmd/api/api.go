@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/elhambadri2411/social/docs" // internal package, used for generating swagger docs
+	"github.com/elhambadri2411/social/internal/auth"
 	"github.com/elhambadri2411/social/internal/mailer"
 	"github.com/elhambadri2411/social/internal/store" // internal package, serves as abstraction layer for db
 	"github.com/go-chi/chi/v5"
@@ -16,21 +17,30 @@ import (
 
 // `application` config struct which represents application context
 type application struct {
-	config config             // app level config settings
-	store  store.Storage      // "Repository"
-	logger *zap.SugaredLogger // logger
-	mailer mailer.Client
+	config        config             // app level config settings
+	store         store.Storage      // "Repository"
+	logger        *zap.SugaredLogger // logger
+	mailer        mailer.Client
+	authenticator auth.Authenticator
 }
 
 // `authConfig` struct stores applciation auth configuration
 type authConfig struct {
 	basic basicConfig // basic auth config options
+	token tokenConfig // configuration for auth tokens
 }
 
 // `basicConfig` struct stores applciation basic style auth configuration
 type basicConfig struct {
 	username string // username for basic auth
 	password string // password for basic auth
+}
+
+// `tokenConfig` struct stores config for token based auth
+type tokenConfig struct {
+	secret     string
+	expiration time.Duration
+	issuer     string
 }
 
 // `config` struct stores application configuration, including:
@@ -118,6 +128,7 @@ func (app *application) mount() *chi.Mux {
 		// Public
 		r.Route("/authentication", func(r chi.Router) {
 			r.Post("/user", app.registerUserHandler)
+			r.Post("/token", app.createTokenHandler)
 		})
 	})
 
