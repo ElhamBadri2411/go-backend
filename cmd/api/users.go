@@ -51,11 +51,14 @@ func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 //	@Security		ApiKeyAuth
 //	@Router			/users/{userID}/follow [put]
 func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request) {
-	userToFollow := getUserFromCtx(r)
+	followerUser := getUserFromCtx(r)
+	followedId, err := strconv.ParseInt(chi.URLParam(r, "userId"), 10, 64)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
-	var userId int64 = 199 // TODO: remove
-
-	if err := app.store.UsersRepository.Follow(r.Context(), userToFollow.ID, userId); err != nil {
+	if err := app.store.UsersRepository.Follow(r.Context(), followedId, followerUser.ID); err != nil {
 		switch err {
 		case store.ErrConflict:
 			app.conflictError(w, r, err)
@@ -85,16 +88,21 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 //	@Security		ApiKeyAuth
 //	@Router			/users/{userID}/unfollow [put]
 func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Request) {
-	userToUnfollow := getUserFromCtx(r)
+	followerUser := getUserFromCtx(r)
+	followedId, err := strconv.ParseInt(chi.URLParam(r, "userId"), 10, 64)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
-	var userId int64 = 199 // TODO: remove
-
-	if err := app.store.UsersRepository.Unfollow(r.Context(), userToUnfollow.ID, userId); err != nil {
+	if err := app.store.UsersRepository.Unfollow(r.Context(), followedId, followerUser.ID); err != nil {
 		app.internalServerError(w, r, err)
+		return
 	}
 
 	if err := app.jsonResponse(w, http.StatusOK, nil); err != nil {
 		app.internalServerError(w, r, err)
+		return
 	}
 }
 

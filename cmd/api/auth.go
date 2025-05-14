@@ -191,7 +191,7 @@ func (app *application) createTokenHandler(w http.ResponseWriter, r *http.Reques
 
 	claims := jwt.MapClaims{
 		"sub": user.ID,
-		"exp": time.Now().Add(app.config.auth.token.expiration),
+		"exp": time.Now().Add(app.config.auth.token.expiration).Unix(),
 		"iat": time.Now().Unix(),
 		"nbf": time.Now().Unix(),
 		"iss": app.config.auth.token.issuer,

@@ -185,14 +185,14 @@ func (s *UsersRepositoryPostgres) Follow(ctx context.Context, userToFollowId int
 	return err
 }
 
-func (s *UsersRepositoryPostgres) Unfollow(ctx context.Context, userToFollowId int64, userId int64) error {
+func (s *UsersRepositoryPostgres) Unfollow(ctx context.Context, userToUnfollowId int64, userId int64) error {
 	query := `
 	DELETE FROM followers WHERE (user_id, follower_id) = ($1, $2)  
 	`
 	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
 	defer cancel()
 	// Execute the query and scan the result into the `post` struct.
-	res, err := s.db.ExecContext(ctx, query, userToFollowId, userId)
+	res, err := s.db.ExecContext(ctx, query, userToUnfollowId, userId)
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
