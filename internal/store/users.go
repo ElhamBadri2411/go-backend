@@ -137,7 +137,7 @@ func (s *UsersRepositoryPostgres) createUserInvitation(ctx context.Context, tx *
 
 func (s *UsersRepositoryPostgres) GetById(ctx context.Context, id int64) (*User, error) {
 	query := `
-		SELECT id, email, username, created_at FROM users WHERE id = $1 AND is_active = true
+		SELECT id, email, username, password, created_at FROM users WHERE id = $1 AND is_active = true
 	`
 	var user User
 	ctx, cancel := context.WithTimeout(ctx, QueryContextTimeoutDuration)
@@ -147,6 +147,7 @@ func (s *UsersRepositoryPostgres) GetById(ctx context.Context, id int64) (*User,
 		&user.ID,
 		&user.Email,
 		&user.Username,
+		&user.Password.hash,
 		&user.CreatedAt,
 	)
 	if err != nil {
