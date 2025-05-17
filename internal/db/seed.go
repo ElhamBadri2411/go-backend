@@ -229,6 +229,9 @@ func generateUsers(num int) []*store.User {
 			Email:    usernames[i%len(usernames)] + fmt.Sprintf("%d", i) + "@mail.com",
 			Password: password,
 			IsActive: true,
+			Role: store.Role{
+				Name: "user",
+			},
 		}
 	}
 

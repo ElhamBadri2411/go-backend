@@ -80,6 +80,7 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 	comments, err := app.store.CommentsRepository.GetByPostId(r.Context(), post.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
+		return
 	}
 
 	post.Comments = comments
@@ -207,7 +208,7 @@ func (app *application) createPostsHandler(w http.ResponseWriter, r *http.Reques
 		Title:   payload.Title,
 		Content: payload.Content,
 		Tags:    payload.Tags,
-		UserId: user.ID,
+		UserId:  user.ID,
 	}
 
 	ctx := r.Context()

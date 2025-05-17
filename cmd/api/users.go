@@ -71,6 +71,7 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 
 	if err := app.jsonResponse(w, http.StatusOK, nil); err != nil {
 		app.internalServerError(w, r, err)
+		return
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/elhambadri2411/social/internal/store"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -59,10 +60,12 @@ func (app *application) AuthTokenMiddleware(next http.Handler) http.Handler {
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
 			app.unauthorizedError(w, r, fmt.Errorf("authorization header malformed"))
+			return
 		}
 		jwtToken, err := app.authenticator.ValidateToken(parts[1])
 		if err != nil {
 			app.unauthorizedError(w, r, err)
+			return
 		}
 
 		claims, _ := jwtToken.Claims.(jwt.MapClaims)
@@ -83,4 +86,38 @@ func (app *application) AuthTokenMiddleware(next http.Handler) http.Handler {
 		ctx = context.WithValue(ctx, userCtx, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func (app *application) checkPostOwnership(roleName string, next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := getUserFromCtx(r)
+		post := getPostFromCtx(r)
+
+		if post.UserId == user.ID {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		allowed, err := app.checkRolePrecedence(r.Context(), user, roleName)
+		if err != nil {
+			app.internalServerError(w, r, err)
+			return
+		}
+
+		if !allowed {
+			app.forbiddenResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) checkRolePrecedence(ctx context.Context, user *store.User, roleName string) (bool, error) {
+	role, err := app.store.RolesRepository.GetByName(ctx, roleName)
+	if err != nil {
+		return false, err
+	}
+
+	return user.Role.Level >= role.Level, nil
 }

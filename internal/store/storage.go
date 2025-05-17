@@ -60,12 +60,17 @@ type UsersRepository interface {
 	GetByEmail(context.Context, string) (*User, error)
 }
 
+type RolesRepository interface {
+	GetByName(context.Context, string) (*Role, error)
+}
+
 // `Storage` acts as a central repository abstraction layer.
 // It embeds `PostsRepository` and `UsersRepository`, allowing unified access to database operations.
 type Storage struct {
-	PostsRepository // Handles post-related database operations
-	UsersRepository // Handles user-related database operations
-	CommentsRepository
+	PostsRepository    // Handles post-related database operations
+	UsersRepository    // Handles user-related database operations
+	CommentsRepository // Handles comment-related database operations
+	RolesRepository    // Handles role-related database operations
 }
 
 // `NewStorage` initializes and returns a new `Storage` instance.
@@ -81,6 +86,7 @@ func NewStorage(db *sql.DB) Storage {
 		PostsRepository:    &PostsRepositoryPostgres{db}, // Instantiate PostgreSQL-backed posts repository
 		UsersRepository:    &UsersRepositoryPostgres{db}, // Instantiate PostgreSQL-backed users repository
 		CommentsRepository: &CommentRepositoryPostgres{db},
+		RolesRepository:    &RoleRepositoryPostgres{db},
 	}
 }
 
