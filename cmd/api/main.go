@@ -8,7 +8,8 @@ import (
 	"github.com/elhambadri2411/social/internal/env" // internal package for extracting and loading env variables
 	"github.com/elhambadri2411/social/internal/mailer"
 	"github.com/elhambadri2411/social/internal/store" // internal package, serves as abstraction layer for db
-	"github.com/joho/godotenv"                        // package for loading environment variables
+	"github.com/elhambadri2411/social/internal/store/cache"
+	"github.com/joho/godotenv" // package for loading environment variables
 	"go.uber.org/zap"
 )
 
@@ -63,6 +64,12 @@ func main() {
 			maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
+		redis: redisConfig{
+			address:   env.GetString("REDIS_ADDR", "localhost:6379"),
+			password:  env.GetString("REDIS_PASS", ""),
+			db:        env.GetInt("REDIS_DB", 0),
+			isEnabled: env.GetBoolean("REDIS_IS_ENABLED", true),
+		},
 		mail: mailConfig{
 			exp:       time.Hour * 8,
 			fromEmail: env.GetString("FROM_EMAIL", "test@mail.com"),
@@ -93,6 +100,9 @@ func main() {
 	}
 	defer db.Close()
 
+	// Initialize a new `cache` which is the interface for a redis cache
+	redis := cache.NewRedisClient(config.redis.address, config.redis.password, config.redis.db)
+
 	// Initialize a new storage layer (`store`) which acts as an interface between
 	// the application and the database. The `store` package is responsible
 	// for querying, inserting, updating, and deleting records in the database.
@@ -112,6 +122,7 @@ func main() {
 		logger:        logger,
 		mailer:        mailer,
 		authenticator: jwtAuthenticator,
+		cache:         cache.NewCacheStorage(redis),
 	}
 
 	// Mount the application's HTTP handlers (routes) onto a multiplexer (`mux`).

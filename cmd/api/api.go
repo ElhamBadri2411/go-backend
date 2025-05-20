@@ -9,6 +9,7 @@ import (
 	"github.com/elhambadri2411/social/internal/auth"
 	"github.com/elhambadri2411/social/internal/mailer"
 	"github.com/elhambadri2411/social/internal/store" // internal package, serves as abstraction layer for db
+	"github.com/elhambadri2411/social/internal/store/cache"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -22,6 +23,7 @@ type application struct {
 	logger        *zap.SugaredLogger // logger
 	mailer        mailer.Client
 	authenticator auth.Authenticator
+	cache         cache.Storage
 }
 
 // `authConfig` struct stores applciation auth configuration
@@ -52,6 +54,14 @@ type config struct {
 	mail        mailConfig // mail config settings
 	auth        authConfig // auth config settings
 	frontendUrl string     // url for the frontend
+	redis       redisConfig
+}
+
+type redisConfig struct {
+	address   string
+	password  string
+	db        int
+	isEnabled bool
 }
 
 // `dbConfig` struct hold db related config
