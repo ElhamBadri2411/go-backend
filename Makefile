@@ -25,3 +25,12 @@ gen-docs:
 .PHONY: run
 run:
 	@swag init -g ./api/main.go -d cmd,internal && swag fmt && go run ./cmd/api/*.go
+
+.PHONY: test-api
+test-api:
+	@go test -v ./cmd/api/
+
+.PHONY: test
+test:
+	@go test -v ./...
+
