@@ -7,6 +7,7 @@ import (
 	"github.com/elhambadri2411/social/internal/db"  // internal package for handling db connections
 	"github.com/elhambadri2411/social/internal/env" // internal package for extracting and loading env variables
 	"github.com/elhambadri2411/social/internal/mailer"
+	"github.com/elhambadri2411/social/internal/ratelimiter"
 	"github.com/elhambadri2411/social/internal/store" // internal package, serves as abstraction layer for db
 	"github.com/elhambadri2411/social/internal/store/cache"
 	"github.com/joho/godotenv" // package for loading environment variables
@@ -89,6 +90,10 @@ func main() {
 				issuer:     "devsocial",
 			},
 		},
+		rateLimiter: ratelimiter.Config{
+			RequestsPerTimeFrame: env.GetInt("RATELIMITER_REQUESTS", 20),
+			TimeFrame:            time.Second * 30,
+		},
 	}
 
 	// Init a new db connections with configuration setup
@@ -102,6 +107,8 @@ func main() {
 
 	// Initialize a new `cache` which is the interface for a redis cache
 	redis := cache.NewRedisClient(config.redis.address, config.redis.password, config.redis.db)
+
+	limiter := ratelimiter.NewFixedWindowRateLimiter(config.rateLimiter.RequestsPerTimeFrame, config.rateLimiter.TimeFrame)
 
 	// Initialize a new storage layer (`store`) which acts as an interface between
 	// the application and the database. The `store` package is responsible
@@ -123,6 +130,7 @@ func main() {
 		mailer:        mailer,
 		authenticator: jwtAuthenticator,
 		cache:         cache.NewCacheStorage(redis),
+		rateLimiter:   limiter,
 	}
 
 	// Mount the application's HTTP handlers (routes) onto a multiplexer (`mux`).
