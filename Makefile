@@ -1,10 +1,12 @@
 include .env
+
+GO := /usr/local/go/bin/go
 MIGRATIONS_PATH = ./cmd/migrate/migrations/
 SEED_PATH = ./cmd/migrate/seed/main.go
 
 .PHONY: migrate
 migrate:
-	@goose create -dir $(MIGRATIONS_PATH) $(name)  sql
+	@goose create -dir $(MIGRATIONS_PATH) $(name) sql
 
 .PHONY: up
 up:
@@ -16,7 +18,7 @@ down:
 
 .PHONY: seed
 seed:
-	@go run $(SEED_PATH)
+	@$(GO) run $(SEED_PATH)
 
 .PHONY: gen-docs
 gen-docs:
@@ -24,13 +26,22 @@ gen-docs:
 
 .PHONY: run
 run:
-	@swag init -g ./api/main.go -d cmd,internal && swag fmt && go run ./cmd/api/*.go
+	@swag init -g ./api/main.go -d cmd,internal && swag fmt && $(GO) run ./cmd/api/*.go
 
 .PHONY: test-api
 test-api:
-	@go test -v ./cmd/api/
+	@$(GO) test -v ./cmd/api/
 
 .PHONY: test
 test:
-	@go test -v ./...
+	@$(GO) test -v -race ./...
 
+.PHONY: tidy
+tidy:
+	$(GO) mod tidy -v
+	$(GO) fmt ./...
+
+.PHONY: test/cover
+test/cover:
+	$(GO) test -v -race -buildvcs -coverprofile=/tmp/coverage.out ./...
+	$(GO) tool cover -html=/tmp/coverage.out
