@@ -18,6 +18,7 @@ import (
 	"github.com/elhambadri2411/social/internal/store/cache"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.uber.org/zap"
 )
@@ -104,6 +105,10 @@ func (app *application) mount() *chi.Mux {
 	r.Use(middleware.RealIP)    // Extract client IP from header
 	r.Use(middleware.Logger)    // Log incoming requests
 	r.Use(middleware.Recoverer) // recoverse from panics and prevents crashes (throw 500)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"https://*"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "DELETE"},
+	}))
 	r.Use(app.RateLimiterMiddleware)
 
 	// Set a timeout for all HTTP requests to prevent hanging requests.
